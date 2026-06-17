@@ -1,0 +1,20 @@
+# ============================================
+# 服务器部署环境 profile
+# 启动: source ~/services/services-ports.env && mvn spring-boot:run -Dspring.profiles.active=server
+# ============================================
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER}
+      config:
+        server-addr: ${NACOS_SERVER}
+  datasource:
+    url: ${MYSQL_URL}
+    username: root
+    password: ${MYSQL_PASSWORD}
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD:}

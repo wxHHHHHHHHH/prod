@@ -102,9 +102,18 @@ deploy_infra() {
   echo ""
   echo "--- 部署基础设施 ---"
 
-  # 配置 Docker 国内镜像源
+  # 1. 安装 Docker（如果没有）
+  if ! command -v docker &>/dev/null; then
+    info "安装 Docker..."
+    curl -fsSL https://get.docker.com | bash
+    sudo systemctl enable docker 2>/dev/null || true
+    sudo systemctl start docker 2>/dev/null || { service docker start 2>/dev/null; }
+    log "Docker 安装完成"
+  fi
+
+  # 2. 配置 Docker 国内镜像加速
   if [ ! -f /etc/docker/daemon.json ]; then
-    info "配置 Docker 阿里云镜像加速..."
+    info "配置 Docker 镜像加速..."
     sudo mkdir -p /etc/docker
     sudo tee /etc/docker/daemon.json > /dev/null <<'DOCKERJSON'
 {
@@ -115,7 +124,7 @@ deploy_infra() {
   ]
 }
 DOCKERJSON
-    sudo systemctl daemon-reload && sudo systemctl restart docker
+    sudo systemctl daemon-reload 2>/dev/null; sudo systemctl restart docker 2>/dev/null || sudo service docker restart 2>/dev/null || true
     log "Docker 镜像加速已配置"
   fi
 

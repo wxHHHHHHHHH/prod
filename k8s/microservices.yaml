@@ -1,0 +1,192 @@
+# ============================================
+# 微服务: Gateway + Auth + Product + Order + Payment
+# ============================================
+
+# --- Gateway ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: mall
+spec:
+  type: NodePort
+  ports: [{port: 8080, targetPort: 8080, nodePort: 30080}]
+  selector: {app: gateway}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: mall
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: gateway}
+  template:
+    metadata:
+      labels: {app: gateway}
+    spec:
+      containers:
+      - name: gateway
+        image: mall-gateway:latest
+        imagePullPolicy: IfNotPresent
+        ports: [{containerPort: 8080}]
+        env:
+        - {name: SPRING_PROFILES_ACTIVE, value: "server"}
+        - name: NACOS_SERVER
+          valueFrom: {configMapKeyRef: {name: mall-config, key: NACOS_SERVER}}
+        resources:
+          requests: {memory: "256Mi", cpu: "100m"}
+          limits:   {memory: "512Mi", cpu: "500m"}
+        readinessProbe:
+          httpGet: {path: /actuator/health, port: 8080}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+# --- Auth Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: auth-service}
+  template:
+    metadata:
+      labels: {app: auth-service}
+    spec:
+      containers:
+      - name: auth-service
+        image: mall-auth-service:latest
+        imagePullPolicy: IfNotPresent
+        ports: [{containerPort: 8081}]
+        env:
+        - {name: SERVER_PORT, value: "8081"}
+        - {name: SPRING_PROFILES_ACTIVE, value: "server"}
+        - name: NACOS_SERVER
+          valueFrom: {configMapKeyRef: {name: mall-config, key: NACOS_SERVER}}
+        - name: MYSQL_HOST
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_HOST}}
+        - name: MYSQL_PORT
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_PORT}}
+        - name: MYSQL_DATABASE
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_DATABASE}}
+        - name: MYSQL_PASSWORD
+          valueFrom: {secretKeyRef: {name: mall-secrets, key: mysql-root-password}}
+        resources:
+          requests: {memory: "256Mi", cpu: "100m"}
+          limits:   {memory: "512Mi", cpu: "500m"}
+
+---
+# --- Product Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: product-service}
+  template:
+    metadata:
+      labels: {app: product-service}
+    spec:
+      containers:
+      - name: product-service
+        image: mall-product-service:latest
+        imagePullPolicy: IfNotPresent
+        ports: [{containerPort: 8083}]
+        env:
+        - {name: SERVER_PORT, value: "8083"}
+        - {name: SPRING_PROFILES_ACTIVE, value: "server"}
+        - name: NACOS_SERVER
+          valueFrom: {configMapKeyRef: {name: mall-config, key: NACOS_SERVER}}
+        - name: MYSQL_HOST
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_HOST}}
+        - name: MYSQL_PORT
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_PORT}}
+        - name: MYSQL_DATABASE
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_DATABASE}}
+        - name: MYSQL_PASSWORD
+          valueFrom: {secretKeyRef: {name: mall-secrets, key: mysql-root-password}}
+        resources:
+          requests: {memory: "256Mi", cpu: "100m"}
+          limits:   {memory: "512Mi", cpu: "500m"}
+
+---
+# --- Order Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: order-service}
+  template:
+    metadata:
+      labels: {app: order-service}
+    spec:
+      containers:
+      - name: order-service
+        image: mall-order-service:latest
+        imagePullPolicy: IfNotPresent
+        ports: [{containerPort: 8084}]
+        env:
+        - {name: SERVER_PORT, value: "8084"}
+        - {name: SPRING_PROFILES_ACTIVE, value: "server"}
+        - name: NACOS_SERVER
+          valueFrom: {configMapKeyRef: {name: mall-config, key: NACOS_SERVER}}
+        - name: MYSQL_HOST
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_HOST}}
+        - name: MYSQL_PORT
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_PORT}}
+        - name: MYSQL_DATABASE
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_DATABASE}}
+        - name: MYSQL_PASSWORD
+          valueFrom: {secretKeyRef: {name: mall-secrets, key: mysql-root-password}}
+        resources:
+          requests: {memory: "256Mi", cpu: "100m"}
+          limits:   {memory: "512Mi", cpu: "500m"}
+
+---
+# --- Payment Service ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: payment-service}
+  template:
+    metadata:
+      labels: {app: payment-service}
+    spec:
+      containers:
+      - name: payment-service
+        image: mall-payment-service:latest
+        imagePullPolicy: IfNotPresent
+        ports: [{containerPort: 8085}]
+        env:
+        - {name: SERVER_PORT, value: "8085"}
+        - {name: SPRING_PROFILES_ACTIVE, value: "server"}
+        - name: NACOS_SERVER
+          valueFrom: {configMapKeyRef: {name: mall-config, key: NACOS_SERVER}}
+        - name: MYSQL_HOST
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_HOST}}
+        - name: MYSQL_PORT
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_PORT}}
+        - name: MYSQL_DATABASE
+          valueFrom: {configMapKeyRef: {name: mall-config, key: MYSQL_DATABASE}}
+        - name: MYSQL_PASSWORD
+          valueFrom: {secretKeyRef: {name: mall-secrets, key: mysql-root-password}}
+        resources:
+          requests: {memory: "256Mi", cpu: "100m"}
+          limits:   {memory: "512Mi", cpu: "500m"}

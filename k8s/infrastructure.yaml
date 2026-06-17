@@ -1,0 +1,131 @@
+# ============================================
+# 基础设施: MySQL + Redis + Nacos
+# ============================================
+
+# --- MySQL ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: mall
+spec:
+  ports: [{port: 3306, targetPort: 3306}]
+  selector: {app: mysql}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+  namespace: mall
+spec:
+  serviceName: mysql
+  replicas: 1
+  selector:
+    matchLabels: {app: mysql}
+  template:
+    metadata:
+      labels: {app: mysql}
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef: {name: mall-secrets, key: mysql-root-password}
+        - name: MYSQL_DATABASE
+          value: mall
+        - name: TZ
+          value: Asia/Shanghai
+        ports: [{containerPort: 3306}]
+        resources:
+          requests: {memory: "512Mi", cpu: "250m"}
+          limits:   {memory: "1Gi", cpu: "500m"}
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+        - name: init-sql
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: init-sql
+        configMap:
+          name: mall-init-sql
+  volumeClaimTemplates:
+  - metadata: {name: mysql-data}
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests: {storage: "20Gi"}
+
+---
+# --- Redis ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: mall
+spec:
+  ports: [{port: 6379, targetPort: 6379}]
+  selector: {app: redis}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: redis}
+  template:
+    metadata:
+      labels: {app: redis}
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command: ["redis-server", "--appendonly", "yes"]
+        ports: [{containerPort: 6379}]
+        resources:
+          requests: {memory: "128Mi", cpu: "100m"}
+          limits:   {memory: "256Mi", cpu: "200m"}
+
+---
+# --- Nacos ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nacos
+  namespace: mall
+spec:
+  ports:
+  - {port: 8848, targetPort: 8848, name: http}
+  - {port: 9848, targetPort: 9848, name: grpc}
+  selector: {app: nacos}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nacos
+  namespace: mall
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: nacos}
+  template:
+    metadata:
+      labels: {app: nacos}
+    spec:
+      containers:
+      - name: nacos
+        image: nacos/nacos-server:v2.3.1
+        env:
+        - {name: MODE, value: "standalone"}
+        - {name: PREFER_HOST_MODE, value: "hostname"}
+        - {name: NACOS_AUTH_ENABLE, value: "false"}
+        ports:
+        - {containerPort: 8848}
+        - {containerPort: 9848}
+        resources:
+          requests: {memory: "512Mi", cpu: "250m"}
+          limits:   {memory: "1Gi", cpu: "500m"}

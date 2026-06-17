@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mall-config
+  namespace: mall
+data:
+  NACOS_SERVER: "nacos:8848"
+  MYSQL_HOST: "mysql"
+  MYSQL_PORT: "3306"
+  MYSQL_DATABASE: "mall"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"

@@ -118,11 +118,16 @@ deploy_infra() {
     systemctl start docker 2>/dev/null || service docker start 2>/dev/null || true
     log "Docker 安装完成"
   fi
-  # 安装 docker-compose 插件（如果没有）
+  # 安装 docker-compose 插件（用国内镜像加速）
   if ! docker compose version &>/dev/null; then
+    info "安装 docker-compose..."
     mkdir -p ~/.docker/cli-plugins
-    curl -SL "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64" -o ~/.docker/cli-plugins/docker-compose
+    curl -SL "https://mirror.ghproxy.com/https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64" \
+      -o ~/.docker/cli-plugins/docker-compose 2>/dev/null || \
+    curl -SL "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64" \
+      -o ~/.docker/cli-plugins/docker-compose
     chmod +x ~/.docker/cli-plugins/docker-compose
+    log "docker-compose 安装完成"
   fi
 
   # 2. 配置 Docker 国内镜像加速
@@ -134,11 +139,15 @@ deploy_infra() {
   "registry-mirrors": [
     "https://docker.1ms.run",
     "https://docker.xuanyuan.me",
-    "https://dockerpull.org"
+    "https://registry.cn-hangzhou.aliyuncs.com"
   ]
 }
 DOCKERJSON
     sudo systemctl daemon-reload 2>/dev/null; sudo systemctl restart docker 2>/dev/null || sudo service docker restart 2>/dev/null || true
+    log "Docker 镜像加速已配置"
+    info "验证镜像加速..."
+    sleep 2
+    docker info 2>/dev/null | grep -A3 "Registry Mirrors" || true
     log "Docker 镜像加速已配置"
   fi
 

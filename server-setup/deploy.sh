@@ -28,23 +28,66 @@ mkdir -p "$LOG_DIR" "$PID_DIR"
 STEP="${1:-all}"
 SERVICE="${2:-}"
 
-# ========== 服务列表 ==========
-# 格式: "服务名:端口:jar路径"
-SERVICES=(
-  "gateway:8080:$APP_DIR/gateway/target/gateway-1.0.0.jar"
-  "auth-service:8081:$APP_DIR/auth-service/target/auth-service-1.0.0.jar"
-  "product-service:8083:$APP_DIR/product-service/target/product-service-1.0.0.jar"
-  "order-service:8084:$APP_DIR/order-service/target/order-service-1.0.0.jar"
-  "payment-service:8085:$APP_DIR/payment-service/target/payment-service-1.0.0.jar"
-)
+# ========== 端口随机生成 ==========
+gen_port() {
+  local port
+  while :; do
+    port=$((10000 + RANDOM % 55535))
+    (echo >/dev/tcp/127.0.0.1/$port) 2>/dev/null || break
+  done
+  echo $port
+}
 
-# 加载基础设施端口
+# 加载或生成端口
 if [ -f "$SETUP_DIR/.env" ]; then
   source "$SETUP_DIR/.env"
+else
+  # 基础设施端口
+  NACOS_PORT=$(gen_port)
+  MYSQL_PORT=$(gen_port)
+  REDIS_PORT=$(gen_port)
+  MYSQL_ROOT_PASSWORD=$(openssl rand -base64 12 2>/dev/null || echo "Mall@$(date +%s)")
 fi
-if [ -f "$SETUP_DIR/services-ports.env" ]; then
-  source "$SETUP_DIR/services-ports.env"
-fi
+
+# 微服务端口(首次随机)
+[ -z "$GW_PORT" ] && GW_PORT=$(gen_port)
+[ -z "$AUTH_PORT" ] && AUTH_PORT=$(gen_port)
+[ -z "$PRODUCT_PORT" ] && PRODUCT_PORT=$(gen_port)
+[ -z "$ORDER_PORT" ] && ORDER_PORT=$(gen_port)
+[ -z "$PAYMENT_PORT" ] && PAYMENT_PORT=$(gen_port)
+
+# 保存端口
+cat > "$SETUP_DIR/.env" <<EOF
+NACOS_PORT=$NACOS_PORT
+MYSQL_PORT=$MYSQL_PORT
+REDIS_PORT=$REDIS_PORT
+MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+MYSQL_DATABASE=mall
+GW_PORT=$GW_PORT
+AUTH_PORT=$AUTH_PORT
+PRODUCT_PORT=$PRODUCT_PORT
+ORDER_PORT=$ORDER_PORT
+PAYMENT_PORT=$PAYMENT_PORT
+EOF
+
+# 端口信息供微服务读取
+cat > "$SETUP_DIR/services-ports.env" <<EOF
+NACOS_SERVER=47.108.130.167:$NACOS_PORT
+MYSQL_URL=jdbc:mysql://47.108.130.167:$MYSQL_PORT/mall
+REDIS_HOST=47.108.130.167
+REDIS_PORT=$REDIS_PORT
+MYSQL_PASSWORD=$MYSQL_ROOT_PASSWORD
+EOF
+
+# ========== 服务列表 ==========
+# 格式: "服务名:端口变量:jar路径"
+SERVICES=(
+  "gateway:$GW_PORT:$APP_DIR/gateway/target/gateway-1.0.0.jar"
+  "auth-service:$AUTH_PORT:$APP_DIR/auth-service/target/auth-service-1.0.0.jar"
+  "product-service:$PRODUCT_PORT:$APP_DIR/product-service/target/product-service-1.0.0.jar"
+  "order-service:$ORDER_PORT:$APP_DIR/order-service/target/order-service-1.0.0.jar"
+  "payment-service:$PAYMENT_PORT:$APP_DIR/payment-service/target/payment-service-1.0.0.jar"
+)
 
 echo ""
 echo "============================================"
@@ -58,23 +101,51 @@ echo "============================================"
 deploy_infra() {
   echo ""
   echo "--- 部署基础设施 ---"
+
+  # 生成 docker-compose.yml（如果不存在）
   if [ ! -f "$SETUP_DIR/docker-compose.yml" ]; then
-    err "docker-compose.yml 不存在，请先上传 server-setup 目录"
-    exit 1
+    info "生成 docker-compose.yml ..."
+    cat > "$SETUP_DIR/docker-compose.yml" <<COMPOSE
+version: '3.8'
+services:
+  nacos:
+    image: nacos/nacos-server:v2.3.1
+    container_name: mall-nacos
+    environment:
+      - MODE=standalone
+      - PREFER_HOST_MODE=hostname
+      - NACOS_AUTH_ENABLE=false
+    ports: ["\${NACOS_PORT}:8848"]
+    restart: unless-stopped
+  mysql:
+    image: mysql:8.0
+    container_name: mall-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: \${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: mall
+      TZ: Asia/Shanghai
+    ports: ["\${MYSQL_PORT}:3306"]
+    volumes:
+      - ./services/mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+  redis:
+    image: redis:7-alpine
+    container_name: mall-redis
+    command: redis-server --appendonly yes
+    ports: ["\${REDIS_PORT}:6379"]
+    volumes:
+      - ./services/redis-data:/data
+    restart: unless-stopped
+COMPOSE
   fi
 
-  # 首次运行生成随机端口
-  if [ ! -f "$SETUP_DIR/.env" ]; then
-    info "首次运行，生成随机端口..."
-    source "$SETUP_DIR/start.sh" _gen_only
-  else
-    source "$SETUP_DIR/.env"
-  fi
+  mkdir -p "$SERVICE_DIR"/{mysql-data,redis-data}
 
   # 启动 Docker 容器
   cd "$SETUP_DIR"
   docker compose up -d 2>&1 | tail -3
-  log "基础组件已启动 (Nacos:$NACOS_PORT MySQL:$MYSQL_PORT Redis:$REDIS_PORT)"
+  log "Nacos: $NACOS_PORT   MySQL: $MYSQL_PORT   Redis: $REDIS_PORT"
 }
 
 # ============================================================
@@ -119,12 +190,13 @@ deploy_app() {
       continue
     fi
     nohup java -Xms256m -Xmx512m \
+      -Dserver.port=$port \
       -Dspring.profiles.active=server \
-      -DNACOS_SERVER="${NACOS_SERVER:-47.108.130.167:8848}" \
-      -DMYSQL_URL="${MYSQL_URL}" \
-      -DMYSQL_PASSWORD="${MYSQL_PASSWORD}" \
-      -DREDIS_HOST="${REDIS_HOST:-47.108.130.167}" \
-      -DREDIS_PORT="${REDIS_PORT:-6379}" \
+      -DNACOS_SERVER="47.108.130.167:${NACOS_PORT}" \
+      -DMYSQL_URL="jdbc:mysql://47.108.130.167:${MYSQL_PORT}/mall" \
+      -DMYSQL_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
+      -DREDIS_HOST="47.108.130.167" \
+      -DREDIS_PORT="${REDIS_PORT}" \
       -jar "$jar" \
       > "$LOG_DIR/$name.log" 2>&1 &
     echo $! > "$PID_DIR/$name.pid"
@@ -249,6 +321,6 @@ esac
 echo ""
 echo "============================================"
 echo -e "  ${GREEN}完成${NC}"
-echo "  API 网关: http://47.108.130.167:8080"
-echo "  Nacos:    http://47.108.130.167:${NACOS_PORT:-?}/nacos"
+echo "  API 网关: http://47.108.130.167:${GW_PORT}"
+  echo "  Nacos:    http://47.108.130.167:${NACOS_PORT}/nacos"
 echo "============================================"

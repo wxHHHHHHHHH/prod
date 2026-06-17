@@ -82,11 +82,11 @@ EOF
 # ========== 服务列表 ==========
 # 格式: "服务名:端口变量:jar路径"
 SERVICES=(
-  "gateway:$GW_PORT:$APP_DIR/gateway/target/gateway-1.0.0.jar"
-  "auth-service:$AUTH_PORT:$APP_DIR/auth-service/target/auth-service-1.0.0.jar"
-  "product-service:$PRODUCT_PORT:$APP_DIR/product-service/target/product-service-1.0.0.jar"
-  "order-service:$ORDER_PORT:$APP_DIR/order-service/target/order-service-1.0.0.jar"
-  "payment-service:$PAYMENT_PORT:$APP_DIR/payment-service/target/payment-service-1.0.0.jar"
+  "gateway:$GW_PORT:$APP_DIR/gateway/target/gateway-*.jar"
+  "auth-service:$AUTH_PORT:$APP_DIR/auth-service/target/auth-service-*.jar"
+  "product-service:$PRODUCT_PORT:$APP_DIR/product-service/target/product-service-*.jar"
+  "order-service:$ORDER_PORT:$APP_DIR/order-service/target/order-service-*.jar"
+  "payment-service:$PAYMENT_PORT:$APP_DIR/payment-service/target/payment-service-*.jar"
 )
 
 echo ""
@@ -156,8 +156,6 @@ COMPOSE
 
   mkdir -p "$SERVICE_DIR"/{mysql-data,redis-data}
 
-  mkdir -p "$SERVICE_DIR"/{mysql-data,redis-data}
-
   # 启动 Docker 容器
   cd "$SETUP_DIR"
   docker compose up -d 2>&1 | tail -3
@@ -195,20 +193,20 @@ deploy_app() {
   # 4. 停止旧进程
   info "停止旧进程..."
   for svc in "${SERVICES[@]}"; do
-    IFS=':' read -r name port jar <<< "$svc"
+    IFS=':' read -r name port pattern <<< "$svc"
     pid=$(lsof -ti :$port 2>/dev/null || true)
     if [ -n "$pid" ]; then
       kill $pid 2>/dev/null && warn "已停止 $name (PID:$pid)"
-    fi
   done
   sleep 2
 
   # 5. 启动服务
   info "启动服务 (profile=server)..."
   for svc in "${SERVICES[@]}"; do
-    IFS=':' read -r name port jar <<< "$svc"
-    if [ ! -f "$jar" ]; then
-      err "$name JAR 不存在: $jar"
+    IFS=':' read -r name port pattern <<< "$svc"
+    jar=$(ls $pattern 2>/dev/null | head -1)
+    if [ -z "$jar" ] || [ ! -f "$jar" ]; then
+      err "$name JAR 不存在: $pattern"
       continue
     fi
     nohup java -Xms256m -Xmx512m \
@@ -241,7 +239,7 @@ check_status() {
   printf "  %-20s %-8s %s\n" "服务" "端口" "状态"
   printf "  %-20s %-8s %s\n" "────" "────" "────"
   for svc in "${SERVICES[@]}"; do
-    IFS=':' read -r name port jar <<< "$svc"
+    IFS=':' read -r name port pattern <<< "$svc"
     if curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:$port 2>/dev/null | grep -q "200\|302\|404\|401"; then
       printf "  ${GREEN}%-20s${NC} %-8s ${GREEN}运行中${NC}\n" "$name" "$port"
     else
@@ -271,7 +269,7 @@ stop_services() {
 
   if [ "$target" = "app" ] || [ "$target" = "all" ]; then
     for svc in "${SERVICES[@]}"; do
-      IFS=':' read -r name port jar <<< "$svc"
+      IFS=':' read -r name port pattern <<< "$svc"
       pid=$(lsof -ti :$port 2>/dev/null || cat "$PID_DIR/$name.pid" 2>/dev/null)
       if [ -n "$pid" ]; then
         kill $pid 2>/dev/null && log "已停止 $name"

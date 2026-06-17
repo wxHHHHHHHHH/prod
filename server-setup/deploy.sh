@@ -130,9 +130,8 @@ deploy_infra() {
     log "docker-compose 安装完成"
   fi
 
-  # 2. 配置 Docker 国内镜像加速
-  if [ ! -f /etc/docker/daemon.json ]; then
-    info "配置 Docker 镜像加速..."
+  # 2. 配置 Docker 国内镜像加速（始终覆盖）
+  info "配置 Docker 镜像加速..."
     sudo mkdir -p /etc/docker
     sudo tee /etc/docker/daemon.json > /dev/null <<'DOCKERJSON'
 {
@@ -148,8 +147,6 @@ DOCKERJSON
     info "验证镜像加速..."
     sleep 2
     docker info 2>/dev/null | grep -A3 "Registry Mirrors" || true
-    log "Docker 镜像加速已配置"
-  fi
 
   # 生成 docker-compose.yml
   cat > "$SETUP_DIR/docker-compose.yml" <<COMPOSE

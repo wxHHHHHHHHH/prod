@@ -7,7 +7,7 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: 47.108.130.167:18848   # Nacos 地址
+        server-addr: ${NACOS_SERVER:47.108.130.167:8848}   # Nacos 地址
         namespace: dev
     gateway:
       discovery:

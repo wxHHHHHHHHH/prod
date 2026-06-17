@@ -16,22 +16,17 @@ info() { echo -e "${CYAN}[i]${NC} $1"; }
 gen_port() {
   local port
   while :; do
-    port=$((10000 + RANDOM % 50000))
+    port=$((10000 + RANDOM % 55535))
     # 检查端口是否被占用
     (echo >/dev/tcp/127.0.0.1/$port) 2>/dev/null || break
   done
   echo $port
 }
 
-# 固定生成(可改,或取消注释使用随机)
-NACOS_PORT=18848
-MYSQL_PORT=13306
-REDIS_PORT=16379
-
-# 真正的随机(取消注释下面三行)
-# NACOS_PORT=$(gen_port)
-# MYSQL_PORT=$(gen_port)
-# REDIS_PORT=$(gen_port)
+# 随机生成 5 位数端口（10000~59999）
+NACOS_PORT=$(gen_port)
+MYSQL_PORT=$(gen_port)
+REDIS_PORT=$(gen_port)
 
 SETUP_DIR="$(cd "$(dirname "$0")" && pwd)"
 SERVICE_DIR="$SETUP_DIR/services"
@@ -226,7 +221,18 @@ for i in $(seq 1 30); do
 done
 log "MySQL 已就绪"
 
-# ========== 7. 输出连接信息 ==========
+# ========== 7. 保存端口信息供微服务读取 ==========
+cat > "$SETUP_DIR/services-ports.env" <<EOF
+# 微服务连接信息
+NACOS_SERVER=47.108.130.167:$NACOS_PORT
+MYSQL_URL=jdbc:mysql://47.108.130.167:$MYSQL_PORT/mall
+REDIS_HOST=47.108.130.167
+REDIS_PORT=$REDIS_PORT
+MYSQL_PASSWORD=$MYSQL_ROOT_PASSWORD
+EOF
+log "端口信息已保存到 services-ports.env"
+
+# ========== 8. 输出连接信息 ==========
 SERVER_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || curl -s ifconfig.me 2>/dev/null || echo "47.108.130.167")
 
 echo ""

@@ -5,14 +5,14 @@ spring:
   application:
     name: auth-service
   datasource:
-    url: jdbc:mysql://47.108.130.167:13306/mall?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
+    url: ${MYSQL_URL:jdbc:mysql://47.108.130.167:3306/mall}?useUnicode=true&characterEncoding=utf8mb4&serverTimezone=Asia/Shanghai
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
   cloud:
     nacos:
       discovery:
-        server-addr: 47.108.130.167:18848
+        server-addr: ${NACOS_SERVER:47.108.130.167:8848}
         namespace: dev
 
 mybatis-plus:

@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mall — 微服务商城</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+:root{--bg:#f8f9fa;--surface:#fff;--ink:#1a1a1a;--ink2:#6b7280;--ink3:#9ca3af;--accent:#6366f1;--accent2:#4f46e5;--warm:#f59e0b;--danger:#ef4444;--radius:12px;--radius-sm:8px;--border:#e5e7eb;--shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);--font:system-ui,-apple-system,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);line-height:1.6;min-height:100vh}
+.container{max-width:1200px;margin:0 auto;padding:0 20px}
+
+/* Header */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;position:sticky;top:0;z-index:100}
+.header-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px;gap:20px}
+.logo{font-size:20px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.nav{display:flex;align-items:center;gap:16px}
+.nav-btn{padding:8px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:14px;font-weight:500;font-family:inherit;background:transparent;color:var(--ink2);transition:all.15s}
+.nav-btn:hover{color:var(--ink);background:var(--bg)}
+.nav-btn.accent{background:var(--accent);color:#fff;font-weight:600}
+.nav-btn.accent:hover{background:var(--accent2)}
+.cart-badge{background:var(--warm);color:#fff;font-size:11px;padding:1px 6px;border-radius:10px;margin-left:-4px}
+
+/* Login */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:linear-gradient(135deg,#f0f0ff,#fff,#fef0f0)}
+.login-card{background:var(--surface);padding:40px;border-radius:var(--radius);box-shadow:0 4px 24px rgba(0,0,0,.06);width:100%;max-width:400px}
+.login-card h1{font-size:24px;font-weight:800;text-align:center;margin-bottom:8px}
+.login-card .sub{text-align:center;color:var(--ink3);font-size:14px;margin-bottom:28px}
+.input{width:100%;padding:12px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-family:inherit;transition:all.15s;background:var(--bg)}
+.input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink2)}
+.btn{width:100%;padding:13px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:15px;font-weight:600;font-family:inherit;transition:all.15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent2)}
+.btn-warm{background:var(--warm);color:#fff}.btn-warm:hover{background:#d97706}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--ink2)}.btn-outline:hover{border-color:var(--ink2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.link{color:var(--accent);cursor:pointer;font-size:14px;text-align:center;display:block;margin-top:12px}
+.link:hover{text-decoration:underline}
+
+/* Product grid */
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;padding:24px 0}
+.product-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:all.2s}
+.product-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.08)}
+.product-img{width:100%;aspect-ratio:4/3;background:linear-gradient(135deg,#f0f0ff,#fff0f0);display:flex;align-items:center;justify-content:center;font-size:48px}
+.product-body{padding:16px}
+.product-name{font-weight:600;font-size:16px;margin-bottom:4px}
+.product-desc{font-size:13px;color:var(--ink3);margin-bottom:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.product-footer{display:flex;justify-content:space-between;align-items:center}
+.product-price{font-size:22px;font-weight:800;color:var(--warm)}
+.product-price::before{content:'¥';font-size:14px}
+.product-stock{font-size:12px;color:var(--ink3)}
+
+/* Detail modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center;animation:fadeIn.2s}
+@keyframes fadeIn{from{opacity:0}}
+.modal{background:var(--surface);border-radius:var(--radius);width:90%;max-width:560px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.1);animation:slideUp.25s cubic-bezier(0,0,.2,1)}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid var(--border)}
+.modal-header h2{font-size:18px;font-weight:700}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink3);width:36px;height:36px;border-radius:50%}
+.modal-close:hover{background:var(--bg);color:var(--ink)}
+.modal-body{padding:24px}
+.flex-row{display:flex;gap:12px;align-items:center}
+
+/* Order history */
+.order-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:16px 20px;margin-bottom:12px}
+.order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.order-no{font-size:12px;color:var(--ink3);font-family:monospace}
+.order-status{padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.status-PENDING{background:#fef3c7;color:#92400e}
+.status-PAID{background:#d1fae5;color:#065f46}
+.status-CANCELLED{background:#fee2e2;color:#991b1b}
+.order-amount{font-size:18px;font-weight:700;color:var(--warm)}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;z-index:999;animation:toastIn.3s ease}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border)}
+.tab{padding:10px 20px;border:none;background:none;cursor:pointer;font-size:14px;font-weight:500;font-family:inherit;color:var(--ink2);border-bottom:2px solid transparent;transition:all.15s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+
+.empty{padding:60px 20px;text-align:center;color:var(--ink3)}.empty-icon{font-size:48px;margin-bottom:12px}
+.spin{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin.8s linear infinite;margin:40px auto}@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:640px){
+  .product-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .header-inner{gap:10px}.logo{font-size:16px}
+  .nav-btn{padding:6px 10px;font-size:13px}
+  .login-card{padding:24px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== LOGIN ===== -->
+  <div class="login-wrap" v-if="!token">
+    <div class="login-card">
+      <h1>{{ isReg ? '注册' : '登录' }}</h1>
+      <p class="sub">微服务商城 · {{ isReg ? '创建账号' : '欢迎回来' }}</p>
+      <div class="form-group"><label>用户名</label><input class="input" v-model="loginForm.username" placeholder="请输入用户名"></div>
+      <div class="form-group" v-if="isReg"><label>昵称</label><input class="input" v-model="loginForm.nickname" placeholder="怎么称呼你"></div>
+      <div class="form-group"><label>密码</label><input class="input" v-model="loginForm.password" type="password" placeholder="请输入密码" @keyup.enter="doLogin"></div>
+      <div v-if="error" style="color:var(--danger);font-size:13px;text-align:center;margin-bottom:12px">{{ error }}</div>
+      <button class="btn" :class="isReg?'btn-warm':'btn-primary'" @click="doLogin" :disabled="loading">
+        {{ loading ? '处理中...' : (isReg ? '注册' : '登录') }}
+      </button>
+      <span class="link" @click="isReg=!isReg;error=''">{{ isReg ? '已有账号？去登录' : '没有账号？去注册' }}</span>
+    </div>
+  </div>
+
+  <!-- ===== MAIN APP ===== -->
+  <div v-if="token">
+    <header class="header">
+      <div class="header-inner">
+        <span class="logo" @click="view='products'">🏪 Mall</span>
+        <nav class="nav">
+          <button class="nav-btn" :class="{active:view==='products'}" @click="view='products'">商品</button>
+          <button class="nav-btn" :class="{active:view==='orders'}" @click="view='orders';loadOrders()">我的订单</button>
+          <button class="nav-btn accent" @click="view='cart'">🛒 <span v-if="cart.length" class="cart-badge">{{ cart.length }}</span></button>
+          <button class="nav-btn" @click="logout">退出</button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="container">
+      <!-- Loading -->
+      <div class="spin" v-if="loading"></div>
+
+      <!-- ===== PRODUCT LIST ===== -->
+      <div v-if="view==='products' && !loading">
+        <div style="padding:24px 0 0"><h2 style="font-size:24px;font-weight:800">全部商品</h2></div>
+        <div class="product-grid">
+          <div class="product-card" v-for="p in products" :key="p.id" @click="openProduct(p)">
+            <div class="product-img">{{ p.name?.charAt(0) || '📦' }}</div>
+            <div class="product-body">
+              <div class="product-name">{{ p.name }}</div>
+              <div class="product-desc">{{ p.description }}</div>
+              <div class="product-footer">
+                <span class="product-price">{{ p.price }}</span>
+                <span class="product-stock">库存 {{ p.stock }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="empty" v-if="products.length===0"><div class="empty-icon">📦</div><p>暂无商品</p></div>
+      </div>
+
+      <!-- ===== CART ===== -->
+      <div v-if="view==='cart'">
+        <div style="padding:24px 0 0"><h2 style="font-size:24px;font-weight:800">购物车</h2></div>
+        <div v-if="cart.length===0" class="empty"><div class="empty-icon">🛒</div><p>购物车空空如也</p></div>
+        <div v-for="(item,i) in cart" :key="i" class="order-card" style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <strong>{{ item.name }}</strong>
+            <div style="color:var(--ink3);font-size:14px">数量: {{ item.quantity }}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="product-price">{{ (item.price * item.quantity).toFixed(2) }}</div>
+            <button class="nav-btn" style="color:var(--danger);font-size:12px" @click="cart.splice(i,1)">移除</button>
+          </div>
+        </div>
+        <div v-if="cart.length>0" class="flex-row" style="justify-content:flex-end;margin-top:20px">
+          <span style="font-size:18px;font-weight:700">合计: <span class="product-price">{{ cartTotal.toFixed(2) }}</span></span>
+          <button class="btn btn-primary" style="width:auto;padding:12px 32px" @click="createOrder" :disabled="ordering">
+            {{ ordering ? '下单中...' : '提交订单' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== ORDERS ===== -->
+      <div v-if="view==='orders'">
+        <div style="padding:24px 0 0"><h2 style="font-size:24px;font-weight:800">我的订单</h2></div>
+        <div v-if="orders.length===0" class="empty"><div class="empty-icon">📋</div><p>暂无订单</p></div>
+        <div class="order-card" v-for="o in orders" :key="o.id">
+          <div class="order-header">
+            <span class="order-no">{{ o.orderNo }}</span>
+            <span :class="'order-status status-'+(o.status||'PENDING')">{{ statusMap[o.status] || o.status }}</span>
+          </div>
+          <div>{{ o.productName }} × {{ o.quantity }}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+            <span class="order-amount">¥{{ o.totalAmount }}</span>
+            <button class="nav-btn accent" v-if="o.status==='PENDING'" @click="payOrder(o)" style="font-size:13px">💳 去支付</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PRODUCT DETAIL MODAL ===== -->
+      <div class="modal-overlay" v-if="selected" @click.self="selected=null">
+        <div class="modal">
+          <div class="modal-header"><h2>{{ selected.name }}</h2><button class="modal-close" @click="selected=null">✕</button></div>
+          <div class="modal-body">
+            <div class="product-img" style="height:200px;border-radius:var(--radius);margin-bottom:16px">{{ selected.name?.charAt(0) }}</div>
+            <p style="color:var(--ink3);margin-bottom:16px">{{ selected.description }}</p>
+            <div class="flex-row" style="justify-content:space-between;margin-bottom:16px">
+              <span class="product-price" style="font-size:28px">¥{{ selected.price }}</span>
+              <span style="color:var(--ink3);font-size:14px">库存: {{ selected.stock }}</span>
+            </div>
+            <div class="flex-row" style="align-items:center;gap:12px">
+              <label style="font-weight:600;font-size:14px">数量:</label>
+              <input class="input" type="number" v-model.number="buyQty" min="1" :max="selected.stock" style="width:80px;text-align:center">
+              <button class="btn btn-primary" style="width:auto;flex:1" @click="addToCart(selected,buyQty);selected=null">
+                加入购物车
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PAYMENT MODAL ===== -->
+      <div class="modal-overlay" v-if="paying" @click.self="paying=null">
+        <div class="modal">
+          <div class="modal-header"><h2>💳 收银台</h2><button class="modal-close" @click="paying=null">✕</button></div>
+          <div class="modal-body">
+            <div style="text-align:center;padding:20px 0">
+              <div style="font-size:64px;margin-bottom:12px">{{ payStep === 'choose' ? '💳' : (payStep === 'qrcode' ? '📱' : '✅') }}</div>
+              <div v-if="payStep==='choose'">
+                <p style="font-weight:600;font-size:18px;margin-bottom:4px">¥{{ payingOrder?.totalAmount }}</p>
+                <p style="color:var(--ink3);margin-bottom:20px">订单号: {{ payingOrder?.orderNo }}</p>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <button class="btn btn-primary" @click="doPay('ALIPAY')">支付宝 支付</button>
+                  <button class="btn" style="background:#07c160;color:#fff" @click="doPay('WECHAT')">微信 支付</button>
+                </div>
+              </div>
+              <div v-if="payStep==='qrcode'">
+                <p style="font-weight:600;margin-bottom:4px">请扫码支付</p>
+                <p style="color:var(--warm);font-size:24px;font-weight:800;margin:20px 0">¥{{ payingOrder?.totalAmount }}</p>
+                <div style="background:var(--bg);padding:20px;border-radius:var(--radius);font-family:monospace;font-size:12px;word-break:break-all;color:var(--ink3);margin-bottom:16px">
+                  {{ payInfo?.payNo || '生成中...' }}
+                </div>
+                <button class="btn btn-primary" @click="simulatePaySuccess()">模拟支付成功</button>
+                <button class="btn btn-outline" style="margin-top:8px" @click="payStep='choose'">返回选择</button>
+              </div>
+              <div v-if="payStep==='done'">
+                <div style="font-size:24px;font-weight:800;color:#065f46;margin-bottom:8px">支付成功！🎉</div>
+                <button class="btn btn-primary" style="width:auto;margin-top:12px" @click="paying=null;view='orders';loadOrders()">查看订单</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" v-if="toast" style="animation:toastIn .3s ease">{{ toast }}</div>
+</div>
+
+<script>
+const API = 'http://47.108.130.167:8080';
+
+const {createApp, ref, computed, watch} = Vue;
+createApp({setup(){
+  // Auth
+  const token = ref(localStorage.getItem('mall_token')||'');
+  const isReg = ref(false);
+  const loginForm = ref({username:'',password:'',nickname:''});
+  const error = ref('');
+  const loading = ref(false);
+  const toast = ref('');
+  const showToast = (m) => { toast.value = m; setTimeout(() => toast.value = '', 2000); };
+
+  const headers =() => token.value ? {'Authorization':'Bearer '+token.value,'Content-Type':'application/json'} : {'Content-Type':'application/json'};
+
+  const doLogin = async () => {
+    if(!loginForm.value.username||!loginForm.value.password){error.value='请填写完整';return}
+    loading.value=true;error.value='';
+    try{
+      const path = isReg.value ? '/api/auth/register' : '/api/auth/login';
+      const body = isReg.value ? {username:loginForm.value.username,password:loginForm.value.password,nickname:loginForm.value.nickname||loginForm.value.username} : {username:loginForm.value.username,password:loginForm.value.password};
+      const r = await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const d = await r.json();
+      if(d.code===200){
+        if(isReg.value){isReg.value=false;showToast('注册成功，请登录')}
+        else{token.value=d.data.token;localStorage.setItem('mall_token',d.data.token);showToast('登录成功')}
+      }else{error.value=d.message||'操作失败'}
+    }catch(e){error.value='网络错误: '+e.message}finally{loading.value=false}
+  };
+  const logout = () => {token.value='';localStorage.removeItem('mall_token');cart.value=[]};
+
+  // View
+  const view = ref('products');
+
+  // Products
+  const products = ref([]);
+  const selected = ref(null);
+  const buyQty = ref(1);
+  const loadProducts = async () => {
+    loading.value=true;
+    try{const r=await fetch(API+'/api/product/list',{headers:headers()});const d=await r.json();products.value=d.data?.records||d.data||[]}
+    catch(e){showToast('加载商品失败: '+e.message)}
+    finally{loading.value=false}
+  };
+  const openProduct = (p) => {selected.value=p;buyQty.value=1};
+
+  // Cart
+  const cart = ref([]);
+  const cartTotal = computed(() => cart.value.reduce((s,i) => s + i.price*i.quantity, 0));
+  const addToCart = (p,qty) => {
+    const existing = cart.value.find(i=>i.id===p.id);
+    if(existing) existing.quantity += qty;
+    else cart.value.push({...p,quantity:qty});
+    showToast('已加入购物车');
+  };
+  const createOrder = async () => {
+    if(cart.value.length===0) return;
+    ordering.value=true;
+    try{
+      // Create one order per cart item (simplified — real app would batch)
+      for(const item of cart.value){
+        const r=await fetch(API+'/api/order/create',{method:'POST',headers:headers(),body:JSON.stringify({productId:item.id,quantity:item.quantity})});
+        const d=await r.json();
+        if(d.code===200) showToast('订单创建成功!');
+        else {showToast(d.message||'下单失败');break}
+      }
+      cart.value=[];view.value='orders';loadOrders();
+    }catch(e){showToast('下单失败: '+e.message)}finally{ordering.value=false}
+  };
+  const ordering = ref(false);
+
+  // Orders
+  const orders = ref([]);
+  const statusMap = {PENDING:'待支付',PAID:'已支付',CANCELLED:'已取消',REFUNDED:'已退款'};
+  const loadOrders = async () => {
+    loading.value=true;
+    try{const r=await fetch(API+'/api/order/list',{headers:headers()});const d=await r.json();orders.value=d.data?.records||d.data||[]}
+    catch(e){showToast('加载订单失败')}
+    finally{loading.value=false}
+  };
+
+  // Payment
+  const paying = ref(false);
+  const payingOrder = ref(null);
+  const payStep = ref('choose');
+  const payInfo = ref(null);
+  const payOrder = (o) => {payingOrder.value=o;payStep.value='choose';paying.value=true};
+  const doPay = async (type) => {
+    try{
+      const r=await fetch(API+'/api/payment/create',{method:'POST',headers:headers(),body:JSON.stringify({orderId:payingOrder.value.id,amount:payingOrder.value.totalAmount,payType:type})});
+      const d=await r.json();
+      if(d.code===200){payInfo.value=d.data;payStep.value='qrcode'}else showToast(d.message||'创建支付失败')
+    }catch(e){showToast('支付请求失败')}
+  };
+  const simulatePaySuccess = () => {payStep.value='done';if(payingOrder.value){payingOrder.value.status='PAID'}};
+
+  loadProducts();
+  return{token,isReg,loginForm,error,loading,doLogin,logout,view,
+    products,selected,buyQty,openProduct,addToCart,cart,cartTotal,createOrder,ordering,
+    orders,statusMap,loadOrders,payOrder,paying,payingOrder,payStep,payInfo,doPay,simulatePaySuccess,
+    toast,headers}
+}}).mount('#app');
+</script>
+</body>
+</html>

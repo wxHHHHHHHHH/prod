@@ -1,0 +1,65 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 47.108.130.167:18848   # Nacos 地址
+        namespace: dev
+    gateway:
+      discovery:
+        locator:
+          enabled: true                 # 自动根据 service-name 路由
+          lower-case-service-id: true
+      routes:
+        # 认证服务 — 登录接口放行
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        # 用户服务 — 需要认证
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=1
+
+        # 商品服务 — 浏览放行，管理需认证
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/product/**
+          filters:
+            - StripPrefix=1
+
+        # 订单服务 — 需认证
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/order/**
+          filters:
+            - StripPrefix=1
+
+        # 支付服务 — 需认证
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payment/**
+          filters:
+            - StripPrefix=1
+
+      # 全局跨域配置
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true

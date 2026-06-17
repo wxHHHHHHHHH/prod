@@ -197,6 +197,7 @@ deploy_app() {
     pid=$(lsof -ti :$port 2>/dev/null || true)
     if [ -n "$pid" ]; then
       kill $pid 2>/dev/null && warn "已停止 $name (PID:$pid)"
+    fi
   done
   sleep 2
 

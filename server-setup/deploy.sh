@@ -176,10 +176,16 @@ deploy_app() {
   cd "$APP_DIR" && git pull 2>&1 | tail -1
 
   # 2. 编译
-  info "Maven 编译..."
+  info "Maven 编译（跳过测试）..."
   cd "$APP_DIR"
-  mvn clean package -DskipTests -q 2>&1 | tail -3
-  log "编译完成"
+  if ! command -v mvn &>/dev/null; then
+    err "Maven 未安装！yum install -y maven"
+    exit 1
+  fi
+  mvn clean package -DskipTests 2>&1 | tail -20
+  JAR_COUNT=$(find . -name "*.jar" -path "*/target/*" ! -name "*sources*" | wc -l)
+  [ "$JAR_COUNT" -lt 3 ] && { err "编译失败(JAR=$JAR_COUNT)"; exit 1; }
+  log "编译完成 ($JAR_COUNT 个JAR)"
 
   # 3. 加载环境变量
   if [ -f "$SETUP_DIR/services-ports.env" ]; then

@@ -1,24 +1,23 @@
 # 服务器部署指南
 
-## 1. 上传到服务器
+## 1. 克隆仓库
 
 ```bash
-scp -r server-setup user@47.108.130.167:~/services/
+git clone git@github.com:wxHHHHHHHHH/prod.git ~/microservice-mall
 ```
 
 ## 2. 一键部署
 
 ```bash
-ssh user@47.108.130.167
-chmod +x ~/services/deploy.sh
-cd ~/services && bash deploy.sh
+cd ~/microservice-mall/server-setup
+chmod +x deploy.sh
+bash deploy.sh
 ```
 
 首次运行会：
-- 生成随机 5 位数端口 → 保存到 `.env`
+- 生成随机 5 位数端口 → 保存 `.env`
 - Docker 拉取 Nacos + MySQL + Redis
-- 从 GitHub 拉取代码 → Maven 编译 → 启动 5 个微服务
-- 防火墙自动放行
+- Git pull → Maven 编译 → 启动 5 个微服务
 
 ## 3. 常用命令
 
@@ -34,12 +33,10 @@ cd ~/services && bash deploy.sh
 
 ## 4. 安全组放行
 
-阿里云控制台 → 安全组 → 入方向放行 TCP：
-
 | 端口 | 用途 |
 |------|------|
 | `8080` | API 网关 |
-| `.env 中的端口` | Nacos / MySQL / Redis |
+| `.env 中的端口` | Nacos / MySQL / Redis（首次运行生成） |
 
 ## 5. 访问地址
 
@@ -47,12 +44,3 @@ cd ~/services && bash deploy.sh
 |------|------|
 | API | http://47.108.130.167:8080 |
 | Nacos | http://47.108.130.167:{随机端口}/nacos |
-| 前端 | 打开 frontend/index.html |
-
-## 6. 环境变量
-
-部署后查看 `services-ports.env`，或者手动 source：
-
-```bash
-source ~/services/services-ports.env
-```

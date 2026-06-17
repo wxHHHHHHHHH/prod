@@ -19,7 +19,7 @@ info() { echo -e "${CYAN}[i]${NC} $1"; }
 err()  { echo -e "${RED}[✗]${NC} $1"; }
 
 SETUP_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_DIR="/home/user/microservice-mall"
+APP_DIR="$(dirname "$SETUP_DIR")"           # server-setup 上级目录即项目根
 LOG_DIR="$SETUP_DIR/logs"
 PID_DIR="$SETUP_DIR/pids"
 
@@ -84,16 +84,9 @@ deploy_app() {
   echo ""
   echo "--- 部署应用 ---"
 
-  # 1. 拉代码
-  if [ -d "$APP_DIR/.git" ]; then
-    info "拉取最新代码..."
-    cd "$APP_DIR" && git pull 2>&1 | tail -1
-  else
-    info "克隆项目..."
-    git clone https://github.com/wxHHHHHHHHH/prod.git "$APP_DIR" 2>/dev/null || {
-      warn "Git 克隆失败，请手动上传项目到 $APP_DIR"
-    }
-  fi
+  # 1. 拉最新代码
+  info "拉取最新代码..."
+  cd "$APP_DIR" && git pull 2>&1 | tail -1
 
   # 2. 编译
   info "Maven 编译..."

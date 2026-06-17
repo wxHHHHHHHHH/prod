@@ -105,10 +105,24 @@ deploy_infra() {
   # 1. 安装 Docker（如果没有）
   if ! command -v docker &>/dev/null; then
     info "安装 Docker..."
-    curl -fsSL https://get.docker.com | bash
-    sudo systemctl enable docker 2>/dev/null || true
-    sudo systemctl start docker 2>/dev/null || { service docker start 2>/dev/null; }
+    # 尝试 yum（Alibaba Cloud Linux / CentOS）
+    if yum install -y docker 2>/dev/null; then
+      log "yum install docker 成功"
+    elif apt-get install -y docker.io 2>/dev/null; then
+      log "apt-get install docker 成功"
+    else
+      err "无法安装 Docker，请手动安装: yum install -y docker"
+      exit 1
+    fi
+    systemctl enable docker 2>/dev/null || true
+    systemctl start docker 2>/dev/null || service docker start 2>/dev/null || true
     log "Docker 安装完成"
+  fi
+  # 安装 docker-compose 插件（如果没有）
+  if ! docker compose version &>/dev/null; then
+    mkdir -p ~/.docker/cli-plugins
+    curl -SL "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64" -o ~/.docker/cli-plugins/docker-compose
+    chmod +x ~/.docker/cli-plugins/docker-compose
   fi
 
   # 2. 配置 Docker 国内镜像加速

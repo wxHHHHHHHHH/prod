@@ -90,7 +90,7 @@ deploy_app() {
     cd "$APP_DIR" && git pull 2>&1 | tail -1
   else
     info "克隆项目..."
-    git clone https://github.com/wxHHHHHHHHH/microservice-mall.git "$APP_DIR" 2>/dev/null || {
+    git clone https://github.com/wxHHHHHHHHH/prod.git "$APP_DIR" 2>/dev/null || {
       warn "Git 克隆失败，请手动上传项目到 $APP_DIR"
     }
   fi

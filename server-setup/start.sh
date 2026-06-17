@@ -23,22 +23,29 @@ gen_port() {
   echo $port
 }
 
-# 随机生成 5 位数端口（10000~59999）
-NACOS_PORT=$(gen_port)
-MYSQL_PORT=$(gen_port)
-REDIS_PORT=$(gen_port)
-
 SETUP_DIR="$(cd "$(dirname "$0")" && pwd)"
 SERVICE_DIR="$SETUP_DIR/services"
 
-# 写端口到 .env 文件
-cat > "$SETUP_DIR/.env" <<EOF
+# 首次运行生成随机端口并保存，后续复用
+if [ -f "$SETUP_DIR/.env" ]; then
+  source "$SETUP_DIR/.env"
+  info "复用已保存的端口: Nacos=$NACOS_PORT  MySQL=$MYSQL_PORT  Redis=$REDIS_PORT"
+else
+  NACOS_PORT=$(gen_port)
+  MYSQL_PORT=$(gen_port)
+  REDIS_PORT=$(gen_port)
+  MYSQL_ROOT_PASSWORD=$(openssl rand -base64 12 2>/dev/null || echo "Mall@$(date +%s)")
+  cat > "$SETUP_DIR/.env" <<EOF
 NACOS_PORT=$NACOS_PORT
 MYSQL_PORT=$MYSQL_PORT
 REDIS_PORT=$REDIS_PORT
-MYSQL_ROOT_PASSWORD=$(openssl rand -base64 12 2>/dev/null || echo "Mall@$(date +%s)")
+MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
 MYSQL_DATABASE=mall
 EOF
+  log "首次运行，随机端口: Nacos=$NACOS_PORT  MySQL=$MYSQL_PORT  Redis=$REDIS_PORT"
+fi
+
+source "$SETUP_DIR/.env"
 
 source "$SETUP_DIR/.env"
 

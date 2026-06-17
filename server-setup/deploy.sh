@@ -102,10 +102,25 @@ deploy_infra() {
   echo ""
   echo "--- 部署基础设施 ---"
 
-  # 生成 docker-compose.yml（如果不存在）
-  if [ ! -f "$SETUP_DIR/docker-compose.yml" ]; then
-    info "生成 docker-compose.yml ..."
-    cat > "$SETUP_DIR/docker-compose.yml" <<COMPOSE
+  # 配置 Docker 国内镜像源
+  if [ ! -f /etc/docker/daemon.json ]; then
+    info "配置 Docker 阿里云镜像加速..."
+    sudo mkdir -p /etc/docker
+    sudo tee /etc/docker/daemon.json > /dev/null <<'DOCKERJSON'
+{
+  "registry-mirrors": [
+    "https://docker.1ms.run",
+    "https://docker.xuanyuan.me",
+    "https://dockerpull.org"
+  ]
+}
+DOCKERJSON
+    sudo systemctl daemon-reload && sudo systemctl restart docker
+    log "Docker 镜像加速已配置"
+  fi
+
+  # 生成 docker-compose.yml
+  cat > "$SETUP_DIR/docker-compose.yml" <<COMPOSE
 version: '3.8'
 services:
   nacos:
@@ -138,7 +153,8 @@ services:
       - ./services/redis-data:/data
     restart: unless-stopped
 COMPOSE
-  fi
+
+  mkdir -p "$SERVICE_DIR"/{mysql-data,redis-data}
 
   mkdir -p "$SERVICE_DIR"/{mysql-data,redis-data}
 

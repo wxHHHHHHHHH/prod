@@ -118,18 +118,6 @@ deploy_infra() {
     systemctl start docker 2>/dev/null || service docker start 2>/dev/null || true
     log "Docker 安装完成"
   fi
-  # 安装 docker-compose 插件（用国内镜像加速）
-  if ! docker compose version &>/dev/null; then
-    info "安装 docker-compose..."
-    mkdir -p ~/.docker/cli-plugins
-    curl -SL "https://mirror.ghproxy.com/https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64" \
-      -o ~/.docker/cli-plugins/docker-compose 2>/dev/null || \
-    curl -SL "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-linux-x86_64" \
-      -o ~/.docker/cli-plugins/docker-compose
-    chmod +x ~/.docker/cli-plugins/docker-compose
-    log "docker-compose 安装完成"
-  fi
-
   # 2. 配置 Docker 国内镜像加速（始终覆盖）
   info "配置 Docker 镜像加速..."
     sudo mkdir -p /etc/docker
@@ -148,46 +136,92 @@ DOCKERJSON
     sleep 2
     docker info 2>/dev/null | grep -A3 "Registry Mirrors" || true
 
-  # 生成 docker-compose.yml
-  cat > "$SETUP_DIR/docker-compose.yml" <<COMPOSE
-version: '3.8'
-services:
-  nacos:
-    image: nacos/nacos-server:v2.3.1
-    container_name: mall-nacos
-    environment:
-      - MODE=standalone
-      - PREFER_HOST_MODE=hostname
-      - NACOS_AUTH_ENABLE=false
-    ports: ["\${NACOS_PORT}:8848"]
-    restart: unless-stopped
-  mysql:
-    image: mysql:8.0
-    container_name: mall-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: \${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: mall
-      TZ: Asia/Shanghai
-    ports: ["\${MYSQL_PORT}:3306"]
-    volumes:
-      - ./services/mysql-data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: unless-stopped
-  redis:
-    image: redis:7-alpine
-    container_name: mall-redis
-    command: redis-server --appendonly yes
-    ports: ["\${REDIS_PORT}:6379"]
-    volumes:
-      - ./services/redis-data:/data
-    restart: unless-stopped
-COMPOSE
+  # 3. 创建数据目录+初始化SQL
+  DATA_DIR="$SETUP_DIR/services"
+  mkdir -p "$DATA_DIR"/{mysql-data,redis-data}
 
-  mkdir -p "$SERVICE_DIR"/{mysql-data,redis-data}
+  cat > "$DATA_DIR/init.sql" <<'SQL'
+CREATE DATABASE IF NOT EXISTS mall CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE mall;
+CREATE TABLE IF NOT EXISTS mall_user (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password VARCHAR(200) NOT NULL,
+  nickname VARCHAR(50),
+  phone VARCHAR(20), email VARCHAR(100), avatar VARCHAR(500),
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted TINYINT DEFAULT 0
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS mall_product (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(200) NOT NULL, description TEXT,
+  price DECIMAL(10,2) NOT NULL, stock INT DEFAULT 0,
+  image_url VARCHAR(500), category VARCHAR(50), status TINYINT DEFAULT 1,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS mall_order (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  order_no VARCHAR(64) NOT NULL UNIQUE,
+  user_id BIGINT NOT NULL, product_id BIGINT NOT NULL,
+  product_name VARCHAR(200), quantity INT NOT NULL,
+  unit_price DECIMAL(10,2) NOT NULL, total_amount DECIMAL(10,2) NOT NULL,
+  status VARCHAR(20) DEFAULT 'PENDING', pay_time DATETIME,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+CREATE TABLE IF NOT EXISTS mall_payment (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  pay_no VARCHAR(64) NOT NULL UNIQUE,
+  order_id BIGINT NOT NULL, user_id BIGINT NOT NULL,
+  amount DECIMAL(10,2) NOT NULL, pay_type VARCHAR(20) DEFAULT 'ALIPAY',
+  status VARCHAR(20) DEFAULT 'PENDING', third_party_no VARCHAR(100),
+  pay_time DATETIME,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+INSERT IGNORE INTO mall_user (username, password, nickname) VALUES
+('admin', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', '管理员');
+INSERT IGNORE INTO mall_product (name, description, price, stock, category, status) VALUES
+('Spring Cloud Alibaba 实战', '从零入门微服务', 99.00, 1000, '电子书', 1),
+('Java 面试八股文 2026', 'Java/Spring/微服务/并发/JVM', 49.90, 500, '电子书', 1),
+('机械键盘 Cherry 青轴', '87键 白光版', 299.00, 50, '数码', 1);
+SQL
 
-  # 启动 Docker 容器
-  cd "$SETUP_DIR"
-  docker compose up -d 2>&1 | tail -3
+  # 4. 拉取镜像 + 启动容器（docker run，无需 compose）
+  info "拉取镜像..."
+  docker pull mysql:8.0 2>&1 | tail -3
+  docker pull nacos/nacos-server:v2.3.1 2>&1 | tail -3
+  docker pull redis:7-alpine 2>&1 | tail -3
+
+  info "启动容器..."
+  docker rm -f mall-mysql mall-nacos mall-redis 2>/dev/null || true
+
+  docker run -d --name mall-mysql \
+    -e MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
+    -e MYSQL_DATABASE=mall \
+    -e TZ=Asia/Shanghai \
+    -p ${MYSQL_PORT}:3306 \
+    -v "$DATA_DIR/mysql-data:/var/lib/mysql" \
+    -v "$DATA_DIR/init.sql:/docker-entrypoint-initdb.d/init.sql" \
+    --restart unless-stopped \
+    mysql:8.0
+
+  docker run -d --name mall-nacos \
+    -e MODE=standalone \
+    -e PREFER_HOST_MODE=hostname \
+    -e NACOS_AUTH_ENABLE=false \
+    -p ${NACOS_PORT}:8848 \
+    --restart unless-stopped \
+    nacos/nacos-server:v2.3.1
+
+  docker run -d --name mall-redis \
+    -p ${REDIS_PORT}:6379 \
+    -v "$DATA_DIR/redis-data:/data" \
+    --restart unless-stopped \
+    redis:7-alpine redis-server --appendonly yes
+
   log "Nacos: $NACOS_PORT   MySQL: $MYSQL_PORT   Redis: $REDIS_PORT"
 }
 
@@ -281,7 +315,7 @@ check_status() {
   # 基础设施状态
   if command -v docker &>/dev/null; then
     echo "基础组件:"
-    docker compose -f "$SETUP_DIR/docker-compose.yml" ps 2>/dev/null | tail -4
+    docker ps --filter "name=mall-" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || true
   fi
 }
 
@@ -294,7 +328,7 @@ stop_services() {
   info "停止服务..."
 
   if [ "$target" = "infra" ] || [ "$target" = "all" ]; then
-    cd "$SETUP_DIR" && docker compose stop 2>/dev/null && log "基础组件已停止"
+    docker stop mall-mysql mall-nacos mall-redis 2>/dev/null && log "基础组件已停止"
   fi
 
   if [ "$target" = "app" ] || [ "$target" = "all" ]; then

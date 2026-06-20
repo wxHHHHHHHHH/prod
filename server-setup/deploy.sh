@@ -427,4 +427,18 @@ echo "============================================"
 echo -e "  ${GREEN}完成${NC}"
 echo "  API 网关: http://47.108.130.167:${GW_PORT}"
   echo "  Nacos:    http://47.108.130.167:${NACOS_PORT}/nacos"
+
+# ============ 修复阿里云 cloud-init 自动关闭密码登录 ============
+info "修复 SSH 密码登录..."
+for f in /etc/ssh/sshd_config.d/*.conf; do
+  [ -f "$f" ] && { grep -q "PasswordAuthentication" "$f" && sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication yes/" "$f" || echo "PasswordAuthentication yes" >> "$f"; }
+done
+sed -i "s/^#\?PasswordAuthentication.*/PasswordAuthentication yes/" /etc/ssh/sshd_config 2>/dev/null
+sed -i "s/^#\?PermitRootLogin.*/PermitRootLogin yes/" /etc/ssh/sshd_config 2>/dev/null
+grep -q "^PasswordAuthentication" /etc/ssh/sshd_config || echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+grep -q "^PermitRootLogin" /etc/ssh/sshd_config || echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+# 禁止 cloud-init 覆盖
+sed -i "s/ssh_pwauth:.*/ssh_pwauth: true/" /etc/cloud/cloud.cfg 2>/dev/null || true
+sed -i "s/disable_root:.*/disable_root: false/" /etc/cloud/cloud.cfg 2>/dev/null || true
+systemctl restart sshd 2>/dev/null && log "SSH 密码登录已确保开启"
 echo "============================================"

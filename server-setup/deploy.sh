@@ -102,15 +102,15 @@ safe_pull() {
     log "镜像已存在: $img"; return 0
   fi
   info "拉取: $img"
-  docker pull "$img" 2>&1 | tail -3 && return 0
+  docker pull "$img" && return 0
   warn "直接拉取失败，尝试代理 docker.1ms.run ..."
-  docker pull "docker.1ms.run/$img" 2>&1 | tail -3 && {
+  docker pull "docker.1ms.run/$img" && {
     docker tag "docker.1ms.run/$img" "$img"; docker rmi "docker.1ms.run/$img" 2>/dev/null; return 0; }
   warn "尝试备用代理 docker.m.daocloud.io ..."
-  docker pull "docker.m.daocloud.io/$img" 2>&1 | tail -3 && {
+  docker pull "docker.m.daocloud.io/$img" && {
     docker tag "docker.m.daocloud.io/$img" "$img"; docker rmi "docker.m.daocloud.io/$img" 2>/dev/null; return 0; }
   warn "尝试备用代理 dockerhub.timeweb.cloud ..."
-  docker pull "dockerhub.timeweb.cloud/$img" 2>&1 | tail -3 && {
+  docker pull "dockerhub.timeweb.cloud/$img" && {
     docker tag "dockerhub.timeweb.cloud/$img" "$img"; docker rmi "dockerhub.timeweb.cloud/$img" 2>/dev/null; return 0; }
   err "所有方式均无法拉取: $img"; return 1
 }

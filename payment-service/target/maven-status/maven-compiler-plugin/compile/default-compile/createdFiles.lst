@@ -1,5 +1,0 @@
-com\mall\payment\controller\PaymentController.class
-com\mall\payment\PaymentApplication.class
-com\mall\payment\service\PaymentService.class
-com\mall\payment\mapper\PaymentMapper.class
-com\mall\payment\entity\PaymentRecord.class

@@ -2,6 +2,9 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
+// 通过环境变量设置后端网关地址，默认连服务器
+const API_TARGET = process.env.VITE_API_TARGET || 'http://47.108.130.167:8080'
+
 export default defineConfig({
   plugins: [vue()],
   resolve: {
@@ -11,9 +14,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        // 本地后端: http://localhost:8080
-        // 远程后端: http://47.108.130.167:8080
-        target: 'http://47.108.130.167:8080',
+        target: API_TARGET,
         changeOrigin: true
       }
     }

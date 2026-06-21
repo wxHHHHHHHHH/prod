@@ -42,8 +42,10 @@ else
 fi
 
 SERVER_IP="${SERVER_IP:-47.108.130.167}"
+APP_ENV_FILE="$SCRIPT_DIR/app-ports.env"
 
-# 后端服务端口: 复用已保存的 or 生成新的
+# 先加载已有端口（如果有），再生成缺失的
+source "$APP_ENV_FILE" 2>/dev/null || true
 [ -z "$GW_PORT" ]      && GW_PORT=$(gen_port)
 [ -z "$AUTH_PORT" ]    && AUTH_PORT=$(gen_port)
 [ -z "$PRODUCT_PORT" ] && PRODUCT_PORT=$(gen_port)
@@ -60,7 +62,6 @@ SERVICES=(
 )
 
 # 保存后端端口到独立文件（每次启动覆盖，避免重复追加）
-APP_ENV_FILE="$SCRIPT_DIR/app-ports.env"
 cat > "$APP_ENV_FILE" << EOF
 GW_PORT=$GW_PORT
 AUTH_PORT=$AUTH_PORT

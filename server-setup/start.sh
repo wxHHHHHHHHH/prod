@@ -23,7 +23,8 @@ if [ -f "$ENV_FILE" ]; then
 fi
 MYSQL_PORT="${MYSQL_PORT:-41728}"
 REDIS_PORT="${REDIS_PORT:-52936}"
-NACOS_PORT="${NACOS_PORT:-38591}"
+NACOS_PORT="${NACOS_PORT:-38848}"
+NACOS_GRPC_PORT=$((NACOS_PORT + 1000))
 
 echo "========================================"
 echo " 微服务商城 — 启动中间件"
@@ -131,19 +132,11 @@ log "Redis 已就绪"
 echo "🐳 启动 Nacos (:$NACOS_PORT)..."
 if docker image inspect "nacos/nacos-server:v2.3.2" &>/dev/null; then
     docker run -d --name mall-nacos \
-        --network mall-net \
+        --network host \
         -e MODE=standalone \
-        -e PREFER_HOST_MODE=hostname \
-        -e NACOS_SERVER_IP=$SERVER_IP \
-        -e SPRING_DATASOURCE_PLATFORM=mysql \
-        -e MYSQL_SERVICE_HOST=mysql \
-        -e MYSQL_SERVICE_PORT=3306 \
-        -e MYSQL_SERVICE_DB_NAME=nacos \
-        -e MYSQL_SERVICE_USER=root \
-        -e MYSQL_SERVICE_PASSWORD="${MYSQL_PASS}" \
-        -e MYSQL_SERVICE_DB_PARAM="characterEncoding=utf8&connectTimeout=3000&socketTimeout=6000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai" \
-        -p ${NACOS_PORT}:8848 \
-        -p $((NACOS_PORT + 1000)):9848 \
+        -e SERVER_PORT=${NACOS_PORT} \
+        -e EMBEDDED_STORAGE=embedded \
+        -e NACOS_AUTH_ENABLE=false \
         -v mall-nacos-data:/home/nacos/data \
         --restart unless-stopped \
         nacos/nacos-server:v2.3.2

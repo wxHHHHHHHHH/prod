@@ -1,0 +1,7 @@
+server:
+  port: 46173
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 47.108.130.167:38848

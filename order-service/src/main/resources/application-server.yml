@@ -9,9 +9,8 @@ spring:
       config:
         import-check:
           enabled: false
-      discovery:
         server-addr: ${NACOS_SERVER}
-      config:
+      discovery:
         server-addr: ${NACOS_SERVER}
     sentinel:
       transport:
@@ -24,7 +23,7 @@ spring:
             connect-timeout: 5000
             read-timeout: 5000
       sentinel:
-        enabled: true  # Feign 整合 Sentinel 熔断
+        enabled: true
   datasource:
     url: ${MYSQL_URL}
     username: root

@@ -9,8 +9,7 @@ spring:
     nacos:
       config:
         import-check:
-          enabled: false     # 默认本地，服务器启动时改为 -Dspring.profiles.active=server
-  cloud:
+          enabled: false
     gateway:
       discovery:
         locator:
@@ -40,3 +39,6 @@ spring:
             allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true
+
+server:
+  port: 8080

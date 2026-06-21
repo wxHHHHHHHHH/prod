@@ -1,6 +1,5 @@
 # ============================================
 # 服务器部署环境 profile
-# 启动: source ~/services/services-ports.env && mvn spring-boot:run -Dspring.profiles.active=server
 # ============================================
 spring:
   config:
@@ -10,9 +9,8 @@ spring:
       config:
         import-check:
           enabled: false
-      discovery:
         server-addr: ${NACOS_SERVER}
-      config:
+      discovery:
         server-addr: ${NACOS_SERVER}
   datasource:
     url: ${MYSQL_URL}

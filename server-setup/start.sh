@@ -57,8 +57,8 @@ mkdir -p /etc/docker
 cat > /etc/docker/daemon.json << JSON
 {
   "registry-mirrors": [
-    "https://mrauqknj.mirror.aliyuncs.com",
-    "https://docker.xuanyuan.me"
+    "https://docker.xuanyuan.me",
+    "https://mrauqknj.mirror.aliyuncs.com"
   ],
   "log-driver": "json-file",
   "log-opts": { "max-size": "100m", "max-file": "3" }

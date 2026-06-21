@@ -21,9 +21,9 @@ SERVER_IP="${SERVER_IP:-47.108.130.167}"
 if [ -f "$ENV_FILE" ]; then
     source "$ENV_FILE"
 fi
-MYSQL_PORT="${MYSQL_PORT:-33060}"
-REDIS_PORT="${REDIS_PORT:-63790}"
-NACOS_PORT="${NACOS_PORT:-18848}"
+MYSQL_PORT="${MYSQL_PORT:-41728}"
+REDIS_PORT="${REDIS_PORT:-52936}"
+NACOS_PORT="${NACOS_PORT:-38591}"
 
 echo "========================================"
 echo " 微服务商城 — 启动中间件"

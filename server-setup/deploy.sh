@@ -37,11 +37,11 @@ APP_ENV_FILE="$SCRIPT_DIR/app-ports.env"
 
 # 加载已有端口 / 用固定默认值
 source "$APP_ENV_FILE" 2>/dev/null || true
-GW_PORT="${GW_PORT:-18080}"
-AUTH_PORT="${AUTH_PORT:-18081}"
-PRODUCT_PORT="${PRODUCT_PORT:-18083}"
-ORDER_PORT="${ORDER_PORT:-18084}"
-PAYMENT_PORT="${PAYMENT_PORT:-18085}"
+GW_PORT="${GW_PORT:-46173}"
+AUTH_PORT="${AUTH_PORT:-51284}"
+PRODUCT_PORT="${PRODUCT_PORT:-34769}"
+ORDER_PORT="${ORDER_PORT:-43852}"
+PAYMENT_PORT="${PAYMENT_PORT:-56310}"
 
 # 服务列表: "服务名:端口变量名:端口值:模块目录"
 SERVICES=(
@@ -178,7 +178,7 @@ do_frontend() {
     source "$ENV_FILE" 2>/dev/null || true
     source "$APP_ENV_FILE" 2>/dev/null || true
     local gw_port="${GW_PORT:-8080}"
-    local web_port="${WEB_PORT:-10080}"
+    local web_port="${WEB_PORT:-29471}"
 
     # 安装 Nginx
     if ! command -v nginx &>/dev/null; then

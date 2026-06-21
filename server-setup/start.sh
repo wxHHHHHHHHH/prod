@@ -73,7 +73,7 @@ pull_image() {
     if docker image inspect "$img" &>/dev/null 2>&1; then
         log "镜像已存在: $img"; return 0
     fi
-    for src in "$img" "docker.m.daocloud.io/$img" "docker.1panel.live/$img"; do
+    for src in "$img" "docker.xuanyuan.me/$img" "docker.xuanyuan.me/library/$img" "docker.m.daocloud.io/$img" "docker.1panel.live/$img"; do
         echo "  尝试: $src"
         if docker pull "$src" 2>&1 | tail -1 | grep -qE "Downloaded|exists|Pulled"; then
             [ "$src" != "$img" ] && docker tag "$src" "$img" 2>/dev/null

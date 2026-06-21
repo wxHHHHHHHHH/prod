@@ -143,7 +143,7 @@ if docker image inspect "nacos/nacos-server:v2.3.2" &>/dev/null; then
         -e MYSQL_SERVICE_PASSWORD="${MYSQL_PASS}" \
         -e MYSQL_SERVICE_DB_PARAM="characterEncoding=utf8&connectTimeout=3000&socketTimeout=6000&autoReconnect=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai" \
         -p ${NACOS_PORT}:8848 \
-        -p 9848:9848 \
+        -p $((NACOS_PORT + 1000)):9848 \
         -v mall-nacos-data:/home/nacos/data \
         --restart unless-stopped \
         nacos/nacos-server:v2.3.2

@@ -69,6 +69,16 @@ else
     echo "✅ Maven 安装完成"
 fi
 
+# ---- 5. 安装 Node.js 20.x ----
+if command -v node &>/dev/null; then
+    echo "✅ Node.js 已安装: $(node -v)"
+else
+    echo "📦 安装 Node.js 20.x..."
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - 2>/dev/null
+    apt-get install -y -qq nodejs
+    echo "✅ Node.js 安装完成: $(node -v) / npm $(npm -v)"
+fi
+
 echo ""
 echo "========================================"
 echo " ✅ 环境安装完成!"
@@ -79,6 +89,8 @@ echo "  Docker:     $(docker --version 2>/dev/null || echo '未安装')"
 echo "  Compose:    $(docker compose version 2>/dev/null || echo '未安装')"
 echo "  Java:       $(java -version 2>&1 | head -1 || echo '未安装')"
 echo "  Maven:      $(mvn --version 2>&1 | head -1 || echo '未安装')"
+echo "  Node.js:    $(node -v 2>/dev/null || echo '未安装')"
+echo "  npm:        $(npm -v 2>/dev/null || echo '未安装')"
 echo ""
 echo "下一步:"
 echo "  1. 上传项目: scp -r microservice-mall/ root@服务器:/opt/mall/"

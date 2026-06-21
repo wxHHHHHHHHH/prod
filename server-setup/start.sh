@@ -16,26 +16,14 @@ ENV_FILE="$SCRIPT_DIR/services-ports.env"
 MYSQL_PASS="${MYSQL_ROOT_PASSWORD:-Mall@2024!}"
 SERVER_IP="${SERVER_IP:-47.108.130.167}"
 
-# ---- 随机5位端口生成（10000-65535）----
-gen_port() {
-    local port
-    while :; do
-        port=$((10000 + RANDOM % 55535))
-        (echo >/dev/tcp/127.0.0.1/$port) 2>/dev/null || break
-    done
-    echo $port
-}
-
-# 加载已有端口 or 生成新端口
+# ---- 固定5位数端口 ----
+# 加载已有端口（如果有）, 否则用默认固定端口
 if [ -f "$ENV_FILE" ]; then
     source "$ENV_FILE"
-    log "复用已有端口配置"
-else
-    MYSQL_PORT=$(gen_port)
-    REDIS_PORT=$(gen_port)
-    NACOS_PORT=$(gen_port)
-    log "生成新端口"
 fi
+MYSQL_PORT="${MYSQL_PORT:-33060}"
+REDIS_PORT="${REDIS_PORT:-63790}"
+NACOS_PORT="${NACOS_PORT:-18848}"
 
 echo "========================================"
 echo " 微服务商城 — 启动中间件"

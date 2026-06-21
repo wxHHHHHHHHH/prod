@@ -23,16 +23,7 @@ PID_DIR="$SCRIPT_DIR/pids"
 ENV_FILE="$SCRIPT_DIR/services-ports.env"
 mkdir -p "$LOG_DIR" "$PID_DIR"
 
-# ---- 随机5位端口 ----
-gen_port() {
-    local port
-    while :; do
-        port=$((10000 + RANDOM % 55535))
-        (echo >/dev/tcp/127.0.0.1/$port) 2>/dev/null || break
-    done
-    echo $port
-}
-
+# ---- 固定5位数端口 ----
 # ---- 加载中间件端口 ----
 if [ -f "$ENV_FILE" ]; then
     source "$ENV_FILE"
@@ -44,13 +35,13 @@ fi
 SERVER_IP="${SERVER_IP:-47.108.130.167}"
 APP_ENV_FILE="$SCRIPT_DIR/app-ports.env"
 
-# 先加载已有端口（如果有），再生成缺失的
+# 加载已有端口 / 用固定默认值
 source "$APP_ENV_FILE" 2>/dev/null || true
-[ -z "$GW_PORT" ]      && GW_PORT=$(gen_port)
-[ -z "$AUTH_PORT" ]    && AUTH_PORT=$(gen_port)
-[ -z "$PRODUCT_PORT" ] && PRODUCT_PORT=$(gen_port)
-[ -z "$ORDER_PORT" ]   && ORDER_PORT=$(gen_port)
-[ -z "$PAYMENT_PORT" ] && PAYMENT_PORT=$(gen_port)
+GW_PORT="${GW_PORT:-18080}"
+AUTH_PORT="${AUTH_PORT:-18081}"
+PRODUCT_PORT="${PRODUCT_PORT:-18083}"
+ORDER_PORT="${ORDER_PORT:-18084}"
+PAYMENT_PORT="${PAYMENT_PORT:-18085}"
 
 # 服务列表: "服务名:端口变量名:端口值:模块目录"
 SERVICES=(
@@ -187,7 +178,7 @@ do_frontend() {
     source "$ENV_FILE" 2>/dev/null || true
     source "$APP_ENV_FILE" 2>/dev/null || true
     local gw_port="${GW_PORT:-8080}"
-    local web_port=$(gen_port)
+    local web_port="${WEB_PORT:-10080}"
 
     # 安装 Nginx
     if ! command -v nginx &>/dev/null; then

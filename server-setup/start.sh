@@ -14,7 +14,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 ENV_FILE="$SCRIPT_DIR/services-ports.env"
 MYSQL_PASS="${MYSQL_ROOT_PASSWORD:-Mall@2024!}"
-ALIYUN_MIRROR="${ALIYUN_MIRROR:-https://mrauqknj.mirror.aliyuncs.com}"
 SERVER_IP="${SERVER_IP:-47.108.130.167}"
 
 # ---- 随机5位端口生成（10000-65535）----
@@ -57,7 +56,10 @@ docker info &>/dev/null || { echo "❌ Docker 未运行"; exit 1; }
 mkdir -p /etc/docker
 cat > /etc/docker/daemon.json << JSON
 {
-  "registry-mirrors": ["${ALIYUN_MIRROR}"],
+  "registry-mirrors": [
+    "https://mrauqknj.mirror.aliyuncs.com",
+    "https://docker.xuanyuan.me"
+  ],
   "log-driver": "json-file",
   "log-opts": { "max-size": "100m", "max-file": "3" }
 }

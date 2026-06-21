@@ -40,7 +40,10 @@ fi
 mkdir -p /etc/docker
 cat > /etc/docker/daemon.json << DOCKERCONF
 {
-  "registry-mirrors": ["${ALIYUN_MIRROR}"],
+  "registry-mirrors": [
+    "https://mrauqknj.mirror.aliyuncs.com",
+    "https://docker.xuanyuan.me"
+  ],
   "log-driver": "json-file",
   "log-opts": { "max-size": "100m", "max-file": "3" }
 }

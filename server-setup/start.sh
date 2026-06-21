@@ -145,7 +145,8 @@ if docker image inspect "nacos/nacos-server:v2.3.2" &>/dev/null; then
     docker run -d --name mall-nacos \
         --network mall-net \
         -e MODE=standalone \
-        -e PREFER_HOST_MODE=ip \
+        -e PREFER_HOST_MODE=hostname \
+        -e NACOS_SERVER_IP=$SERVER_IP \
         -e SPRING_DATASOURCE_PLATFORM=mysql \
         -e MYSQL_SERVICE_HOST=mysql \
         -e MYSQL_SERVICE_PORT=3306 \

@@ -2,8 +2,13 @@
 # 服务器部署环境 profile
 # ============================================
 spring:
+  config:
+    import: optional:nacos:application-common.yml
   cloud:
     nacos:
+      config:
+        import-check:
+          enabled: false
       discovery:
         server-addr: ${NACOS_SERVER}
       config:

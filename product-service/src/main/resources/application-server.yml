@@ -3,8 +3,13 @@
 # 启动: source ~/services/services-ports.env && mvn spring-boot:run -Dspring.profiles.active=server
 # ============================================
 spring:
+  config:
+    import: optional:nacos:application-common.yml
   cloud:
     nacos:
+      config:
+        import-check:
+          enabled: false
       discovery:
         server-addr: ${NACOS_SERVER}
       config:

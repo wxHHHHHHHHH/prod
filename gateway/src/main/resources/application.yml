@@ -2,7 +2,14 @@ spring:
   application:
     name: gateway
   profiles:
-    active: local     # 默认本地，服务器启动时改为 -Dspring.profiles.active=server
+    active: local
+  config:
+    import: optional:nacos:application-common.yml
+  cloud:
+    nacos:
+      config:
+        import-check:
+          enabled: false     # 默认本地，服务器启动时改为 -Dspring.profiles.active=server
   cloud:
     gateway:
       discovery:

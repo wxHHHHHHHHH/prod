@@ -1,5 +1,10 @@
 spring:
+  config:
+    import: optional:nacos:application-common.yml  # Nacos 配置导入（optional 表示不强制）
   cloud:
     nacos:
       discovery:
         server-addr: ${NACOS_SERVER}
+      config:
+        import-check:
+          enabled: false  # 禁用强制导入检查

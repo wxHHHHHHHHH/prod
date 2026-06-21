@@ -23,6 +23,6 @@ logs/
 
 # Env
 .env
-server-setup/services-ports.env
+*.env
 server-setup/logs/
 server-setup/pids/

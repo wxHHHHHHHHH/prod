@@ -73,16 +73,17 @@ pull_image() {
     if docker image inspect "$img" &>/dev/null 2>&1; then
         log "镜像已存在: $img"; return 0
     fi
+    # 代理优先！直连 Docker Hub 容易卡死
     for src in \
-        "$img" \
         "docker.xuanyuan.me/$img" \
         "docker.xuanyuan.me/library/$img" \
         "mrauqknj.mirror.aliyuncs.com/$img" \
         "mrauqknj.mirror.aliyuncs.com/library/$img" \
         "docker.m.daocloud.io/$img" \
-        "docker.1panel.live/$img"; do
+        "docker.1panel.live/$img" \
+        "$img"; do
         echo "  尝试: $src"
-        if docker pull "$src" 2>&1 | tail -1 | grep -qE "Downloaded|exists|Pulled"; then
+        if timeout 30 docker pull "$src" 2>&1 | tail -1 | grep -qE "Downloaded|exists|Pulled"; then
             [ "$src" != "$img" ] && docker tag "$src" "$img" 2>/dev/null
             log "拉取成功: $img"
             return 0

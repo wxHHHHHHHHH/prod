@@ -1,0 +1,12 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: payment-service
+  profiles:
+    active: local
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true

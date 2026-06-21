@@ -1,0 +1,5 @@
+com\mall\order\controller\OrderController.class
+com\mall\order\service\OrderService.class
+com\mall\order\mapper\OrderMapper.class
+com\mall\order\OrderApplication.class
+com\mall\order\feign\ProductFeignClient.class

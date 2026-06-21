@@ -37,20 +37,24 @@ CREATE TABLE IF NOT EXISTS mall_product (
   update_time DATETIME       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB COMMENT='商品表';
 
--- 订单表
+-- 订单表（含地址快照字段）
 CREATE TABLE IF NOT EXISTS mall_order (
-  id           BIGINT AUTO_INCREMENT PRIMARY KEY,
-  order_no     VARCHAR(64)    NOT NULL UNIQUE COMMENT '订单号',
-  user_id      BIGINT         NOT NULL COMMENT '用户ID',
-  product_id   BIGINT         NOT NULL COMMENT '商品ID',
-  product_name VARCHAR(200)   DEFAULT NULL COMMENT '商品名称冗余',
-  quantity     INT            NOT NULL COMMENT '数量',
-  unit_price   DECIMAL(10,2)  NOT NULL COMMENT '单价',
-  total_amount DECIMAL(10,2)  NOT NULL COMMENT '总金额',
-  status       VARCHAR(20)    DEFAULT 'PENDING' COMMENT 'PENDING/PAID/CANCELLED/REFUNDED',
-  pay_time     DATETIME       DEFAULT NULL COMMENT '支付时间',
-  create_time  DATETIME       DEFAULT CURRENT_TIMESTAMP,
-  update_time  DATETIME       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  id               BIGINT AUTO_INCREMENT PRIMARY KEY,
+  order_no         VARCHAR(64)    NOT NULL UNIQUE COMMENT '订单号',
+  user_id          BIGINT         NOT NULL COMMENT '用户ID',
+  product_id       BIGINT         NOT NULL COMMENT '商品ID',
+  product_name     VARCHAR(200)   DEFAULT NULL COMMENT '商品名称冗余',
+  quantity         INT            NOT NULL COMMENT '数量',
+  unit_price       DECIMAL(10,2)  NOT NULL COMMENT '单价',
+  total_amount     DECIMAL(10,2)  NOT NULL COMMENT '总金额',
+  status           VARCHAR(20)    DEFAULT 'PENDING' COMMENT 'PENDING/PAID/CANCELLED/REFUNDED',
+  address_id       BIGINT         DEFAULT NULL COMMENT '收货地址ID',
+  receiver_name    VARCHAR(50)    DEFAULT NULL COMMENT '收货人姓名快照',
+  receiver_phone   VARCHAR(20)    DEFAULT NULL COMMENT '收货人电话快照',
+  shipping_address VARCHAR(500)   DEFAULT NULL COMMENT '完整地址快照(省市区+详细)',
+  pay_time         DATETIME       DEFAULT NULL COMMENT '支付时间',
+  create_time      DATETIME       DEFAULT CURRENT_TIMESTAMP,
+  update_time      DATETIME       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_user_id (user_id),
   INDEX idx_order_no (order_no)
 ) ENGINE=InnoDB COMMENT='订单表';
@@ -72,6 +76,23 @@ CREATE TABLE IF NOT EXISTS mall_payment (
   INDEX idx_pay_no (pay_no)
 ) ENGINE=InnoDB COMMENT='支付记录表';
 
+-- 收货地址表
+CREATE TABLE IF NOT EXISTS mall_address (
+  id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+  user_id        BIGINT         NOT NULL COMMENT '用户ID',
+  receiver_name  VARCHAR(50)    NOT NULL COMMENT '收货人姓名',
+  receiver_phone VARCHAR(20)    NOT NULL COMMENT '收货人电话',
+  province       VARCHAR(50)    DEFAULT NULL COMMENT '省',
+  city           VARCHAR(50)    DEFAULT NULL COMMENT '市',
+  district       VARCHAR(50)    DEFAULT NULL COMMENT '区',
+  detail         VARCHAR(200)   DEFAULT NULL COMMENT '详细地址',
+  is_default     TINYINT        DEFAULT 0 COMMENT '是否默认: 0否 1是',
+  create_time    DATETIME       DEFAULT CURRENT_TIMESTAMP,
+  update_time    DATETIME       DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted        TINYINT        DEFAULT 0 COMMENT '0正常 1删除',
+  INDEX idx_user_id (user_id)
+) ENGINE=InnoDB COMMENT='收货地址表';
+
 -- ============================================
 -- 测试数据
 -- ============================================
@@ -87,3 +108,7 @@ INSERT INTO mall_product (name, description, price, stock, category, status) VAL
 ('波比牌机械键盘', '87键 Cherry MX 青轴 白光版', 299.00, 50, '数码', 1),
 ('4K 显示器 27寸', 'IPS面板 Type-C 65W反向充电', 1999.00, 20, '数码', 1),
 ('人体工学椅', '网布透气 4D扶手 135°后仰', 1599.00, 15, '家具', 1);
+
+INSERT INTO mall_address (user_id, receiver_name, receiver_phone, province, city, district, detail, is_default) VALUES
+(1, '管理员', '13800138000', '广东省', '深圳市', '南山区', '科技园路1号 创新大厦1201', 1),
+(1, '张三', '13900139000', '浙江省', '杭州市', '余杭区', '文一西路969号', 0);

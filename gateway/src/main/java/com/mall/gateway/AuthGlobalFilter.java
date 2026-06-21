@@ -32,7 +32,11 @@ public class AuthGlobalFilter implements GlobalFilter, Ordered {
         "/api/auth/login",
         "/api/auth/register",
         "/api/product/list",
-        "/api/product/detail"
+        "/api/product/detail",
+        // Swagger / API 文档
+        "/swagger-ui",
+        "/v3/api-docs",
+        "/api-docs"
     );
 
     @Override

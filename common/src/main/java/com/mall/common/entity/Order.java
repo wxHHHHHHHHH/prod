@@ -21,6 +21,10 @@ public class Order {
     private BigDecimal unitPrice;           // 单价
     private BigDecimal totalAmount;         // 总金额
     private String status;                  // PENDING/PAID/CANCELLED/REFUNDED
+    private Long addressId;                 // 收货地址ID
+    private String receiverName;            // 收货人姓名快照
+    private String receiverPhone;           // 收货人电话快照
+    private String shippingAddress;         // 完整地址快照
     private LocalDateTime payTime;          // 支付时间
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;

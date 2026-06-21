@@ -1,0 +1,28 @@
+# Maven
+target/
+*.jar
+*.war
+
+# Node / Frontend
+node_modules/
+dist/
+.vite/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Env
+.env
+server-setup/services-ports.env
+server-setup/logs/
+server-setup/pids/
